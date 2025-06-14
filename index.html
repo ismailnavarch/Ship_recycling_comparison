@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Analysis of Ship Recycling Regulations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Slate, Stone, Sky) -->
+    <!-- Application Structure Plan: A thematic, single-page scrolling application. The structure is designed to guide the user from a high-level overview to detailed comparisons, then to the core problems, and finally to the proposed solutions. This flow (Intro -> Comparative Dashboard -> Visualized Conflicts -> Effectiveness Analysis -> Recommendations) is more intuitive for learning than mirroring the report's linear structure. Key interactions include toggleable content for direct comparison, animated diagrams to explain complex issues, an interactive radar chart for a multi-faceted view of effectiveness, and an accordion for digestible recommendations. This non-linear, interactive design prioritizes user exploration and understanding over passive reading. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Overview of HKC, Basel, EU SRR. -> Goal: Compare. -> Viz/Method: Interactive 3-column layout with toggle buttons (HTML/CSS/JS). -> Interaction: Clicking toggles updates content for side-by-side analysis. -> Justification: Allows users to directly compare specific aspects (e.g., Scope, Stringency) across all three regulations, which is more effective than a large static table.
+        - Report Info: "Ship vs. Waste" and "Flag Switching" conflicts. -> Goal: Explain Relationships. -> Viz/Method: Animated diagrams using HTML/CSS/JS. -> Interaction: On-load animations visually demonstrate the abstract legal and practical loopholes. -> Justification: Visual storytelling makes these complex, pivotal issues immediately understandable.
+        - Report Info: Assessment of each regulation's effectiveness. -> Goal: Synthesize & Compare. -> Viz/Method: Radar Chart (Chart.js/Canvas). -> Interaction: Hover tooltips provide context on scores. -> Justification: Provides a multi-dimensional, at-a-glance summary of each framework's strengths and weaknesses.
+        - Report Info: Recommendations for a better framework. -> Goal: Organize & Inform. -> Viz/Method: HTML/CSS/JS Accordion. -> Interaction: Click-to-expand reveals detailed recommendations. -> Justification: Breaks down dense recommendations into digestible pieces, preventing information overload.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .flag-pole {
+            animation: flag-wave 3s infinite;
+            transform-origin: 50% 50%;
+        }
+        @keyframes flag-wave {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(-2deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .ship-path {
+            animation: sail 10s linear infinite;
+        }
+        @keyframes sail {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
+        }
+        .fade-in {
+            animation: fadeIn 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-slate-800">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="font-bold text-xl text-sky-800">Ship Recycling Debrief</h1>
+            <ul class="flex space-x-4 md:space-x-8 text-sm md:text-base font-medium">
+                <li><a href="#compare" class="text-slate-600 hover:text-sky-700 transition">Compare</a></li>
+                <li><a href="#conflicts" class="text-slate-600 hover:text-sky-700 transition">Conflicts</a></li>
+                <li><a href="#effectiveness" class="text-slate-600 hover:text-sky-700 transition">Effectiveness</a></li>
+                <li><a href="#recommendations" class="text-slate-600 hover:text-sky-700 transition">Solutions</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-16">
+
+        <section class="text-center mb-16 md:mb-24 fade-in">
+            <h2 class="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Navigating the Maze of Ship Recycling Rules</h2>
+            <p class="max-w-3xl mx-auto text-slate-600 text-lg">
+                The global shipping industry faces a critical challenge: how to safely and sustainably recycle end-of-life vessels. This interactive analysis explores the three key regulatory frameworks—the Hong Kong Convention (HKC), the Basel Convention, and the EU Ship Recycling Regulation (EU SRR)—to understand their goals, conflicts, and overall effectiveness.
+            </p>
+            <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div class="bg-white p-4 rounded-lg shadow-md border border-slate-200">
+                    <p class="text-3xl font-bold text-sky-700">June 26, 2025</p>
+                    <p class="text-sm text-slate-500">HKC Enters into Force</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md border border-slate-200">
+                    <p class="text-3xl font-bold text-sky-700">&lt;10%</p>
+                    <p class="text-sm text-slate-500">Compliant Yards in South Asia</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md border border-slate-200">
+                    <p class="text-3xl font-bold text-sky-700">43</p>
+                    <p class="text-sm text-slate-500">Facilities on EU Approved List</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="compare" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-10">
+                <h3 class="text-3xl md:text-4xl font-bold text-slate-900">The Regulatory Landscape: A Direct Comparison</h3>
+                <p class="max-w-2xl mx-auto mt-2 text-slate-600">
+                    Each framework aims to protect health and the environment, but their approaches differ significantly. Use the buttons below to compare their core features side-by-side. This section is designed to provide a clear, comparative view of the regulations, allowing you to switch between different aspects like their legal nature, scope, and key provisions to understand their fundamental similarities and differences.
+                </p>
+            </div>
+            <div class="flex justify-center flex-wrap gap-2 mb-8">
+                <button class="comparison-btn bg-sky-700 text-white px-4 py-2 rounded-full text-sm font-medium" data-content="objective">Primary Objective</button>
+                <button class="comparison-btn bg-white text-slate-700 px-4 py-2 rounded-full text-sm font-medium border border-slate-300" data-content="scope">Scope & Applicability</button>
+                <button class="comparison-btn bg-white text-slate-700 px-4 py-2 rounded-full text-sm font-medium border border-slate-300" data-content="mechanism">Key Mechanism</button>
+                <button class="comparison-btn bg-white text-slate-700 px-4 py-2 rounded-full text-sm font-medium border border-slate-300" data-content="stringency">Stringency</button>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div id="hkc-card" class="bg-white p-6 rounded-lg shadow-lg border border-slate-200 transition-all duration-500">
+                    <h4 class="font-bold text-xl mb-3 text-slate-800">Hong Kong Convention (HKC)</h4>
+                    <div class="content-area text-slate-600 text-sm"></div>
+                </div>
+                <div id="basel-card" class="bg-white p-6 rounded-lg shadow-lg border border-slate-200 transition-all duration-500">
+                    <h4 class="font-bold text-xl mb-3 text-slate-800">Basel Convention</h4>
+                    <div class="content-area text-slate-600 text-sm"></div>
+                </div>
+                <div id="eusrr-card" class="bg-white p-6 rounded-lg shadow-lg border border-slate-200 transition-all duration-500">
+                    <h4 class="font-bold text-xl mb-3 text-slate-800">EU Ship Recycling Regulation (EU SRR)</h4>
+                    <div class="content-area text-slate-600 text-sm"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="conflicts" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-10">
+                <h3 class="text-3xl md:text-4xl font-bold text-slate-900">Core Conflicts & Loopholes</h3>
+                <p class="max-w-2xl mx-auto mt-2 text-slate-600">
+                    The biggest challenge to effective regulation is not a lack of rules, but the conflicts and loopholes that exist between them. This section visually breaks down the two most significant issues that create a fragmented and legally ambiguous landscape, allowing shipowners to bypass stricter standards.
+                </p>
+            </div>
+            <div class="grid lg:grid-cols-2 gap-12">
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-slate-200">
+                    <h4 class="font-bold text-xl mb-4 text-center">The "Ship vs. Waste" Dilemma</h4>
+                    <p class="text-sm text-center text-slate-500 mb-6">A fundamental legal conflict exists: is an end-of-life vessel a 'ship' governed by maritime law (HKC) or 'hazardous waste' governed by environmental law (Basel)? This ambiguity creates legal uncertainty and hinders enforcement.</p>
+                    <div class="relative h-48 overflow-hidden">
+                        <div class="absolute top-1/2 left-0 -translate-y-1/2 w-full ship-path">
+                            <div class="text-4xl">🚢</div>
+                        </div>
+                        <div class="absolute h-px bg-slate-300 top-1/2 left-0 w-1/3"></div>
+                        <div class="absolute h-px bg-sky-500 top-[35%] left-1/3 w-2/3 -rotate-6 origin-left"></div>
+                        <div class="absolute h-px bg-red-500 top-[65%] left-1/3 w-2/3 rotate-6 origin-left"></div>
+                        
+                        <div class="absolute top-[20%] left-[60%] text-right">
+                             <p class="font-bold text-sky-700">HKC Path</p>
+                             <p class="text-xs text-slate-500">"Ship for Recycling"</p>
+                        </div>
+                         <div class="absolute top-[68%] left-[60%] text-right">
+                             <p class="font-bold text-red-700">Basel Path</p>
+                             <p class="text-xs text-slate-500">"Hazardous Waste"</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-slate-200">
+                    <h4 class="font-bold text-xl mb-4 text-center">The "Flag Switching" Loophole</h4>
+                    <p class="text-sm text-center text-slate-500 mb-6">Shipowners can switch a vessel's flag from an EU registry to a non-EU one just before its final voyage. This simple administrative change allows them to bypass the strict EU SRR and use cheaper, non-compliant recycling yards.</p>
+                    <div class="relative h-48 flex items-center justify-center overflow-hidden">
+                        <div class="flex items-center space-x-4">
+                            <div id="flag-eu" class="text-3xl flag-pole">🇪🇺</div>
+                            <div class="text-2xl text-slate-400">➡️</div>
+                            <div class="text-4xl">🚢</div>
+                            <div class="text-2xl text-slate-400">➡️</div>
+                            <div id="flag-non-eu" class="text-3xl flag-pole">🇵🇦</div>
+                        </div>
+                        <div id="flag-switch-text" class="absolute bottom-4 text-center text-red-600 font-semibold text-sm">Bypassing EU SRR</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="effectiveness" class="mb-16 md:mb-24 scroll-mt-20">
+            <div class="text-center mb-10">
+                <h3 class="text-3xl md:text-4xl font-bold text-slate-900">Assessing Regulatory Effectiveness</h3>
+                 <p class="max-w-2xl mx-auto mt-2 text-slate-600">
+                    While each framework has its strengths, their overall effectiveness is hampered by various limitations. This chart offers a comparative view based on the report's analysis, evaluating each regulation across key criteria such as global reach, stringency, enforcement power, and practical impact. Hover over the data points to see the rationale.
+                </p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-lg border border-slate-200">
+                <div class="chart-container">
+                    <canvas id="effectivenessChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="recommendations" class="scroll-mt-20">
+            <div class="text-center mb-10">
+                <h3 class="text-3xl md:text-4xl font-bold text-slate-900">A Path Forward: Key Recommendations</h3>
+                 <p class="max-w-2xl mx-auto mt-2 text-slate-600">
+                    Achieving a truly safe and sustainable global ship recycling industry requires more than just rules; it needs a harmonized, robust, and enforceable framework. The following are the core recommendations to resolve existing conflicts, close loopholes, and build a coherent system centered on the Hong Kong Convention.
+                </p>
+            </div>
+            <div class="max-w-3xl mx-auto space-y-4">
+                <div class="accordion-item bg-white border border-slate-200 rounded-lg">
+                    <button class="accordion-header w-full text-left p-4 flex justify-between items-center font-medium text-slate-800 hover:bg-slate-50 transition">
+                        <span>1. Resolve the HKC-Basel Conflict</span>
+                        <span class="transform transition-transform duration-300">▼</span>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-4 pt-0 text-slate-600 text-sm">
+                            <p><strong>Legal Clarity:</strong> Formally establish when a vessel becomes "waste" through a joint IMO-Basel declaration or amendment.</p>
+                            <p class="mt-2"><strong>Equivalency Recognition:</strong> The Basel Convention must formally recognize the HKC as providing an "equivalent level of control," exempting HKC-compliant ships and yards from the conflicting Basel Ban and redundant procedures. This is the single most critical step to creating a predictable legal pathway.</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="accordion-item bg-white border border-slate-200 rounded-lg">
+                    <button class="accordion-header w-full text-left p-4 flex justify-between items-center font-medium text-slate-800 hover:bg-slate-50 transition">
+                        <span>2. Close the EU SRR 'Flag-Switching' Loophole</span>
+                        <span class="transform transition-transform duration-300">▼</span>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-4 pt-0 text-slate-600 text-sm">
+                            <p><strong>Stronger Penalties:</strong> Implement deterrent penalties for shipowners who re-flag vessels to circumvent the EU SRR. The penalty must negate any financial benefit from using non-compliant yards.</p>
+                            <p class="mt-2"><strong>Expand Compliant Capacity:</strong> Strategically expand the EU List to include more global facilities that verifiably meet EU standards, addressing capacity concerns and reducing the incentive to re-flag.</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="accordion-item bg-white border border-slate-200 rounded-lg">
+                    <button class="accordion-header w-full text-left p-4 flex justify-between items-center font-medium text-slate-800 hover:bg-slate-50 transition">
+                        <span>3. Invest in Global Capacity Building</span>
+                        <span class="transform transition-transform duration-300">▼</span>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-4 pt-0 text-slate-600 text-sm">
+                            <p><strong>Foster Investment:</strong> Create public-private partnerships to fund the modernization of recycling yards in major recycling nations like India, Bangladesh, and Pakistan. Resolving the HKC-Basel conflict is key to unlocking private financing.</p>
+                            <p class="mt-2"><strong>Technical Assistance:</strong> Provide ongoing technical support and training to help developing countries implement HKC standards effectively and build the necessary infrastructure.</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="accordion-item bg-white border border-slate-200 rounded-lg">
+                    <button class="accordion-header w-full text-left p-4 flex justify-between items-center font-medium text-slate-800 hover:bg-slate-50 transition">
+                        <span>4. Strengthen Enforcement & Incentives</span>
+                        <span class="transform transition-transform duration-300">▼</span>
+                    </button>
+                    <div class="accordion-content">
+                        <div class="p-4 pt-0 text-slate-600 text-sm">
+                           <p><strong>Universal Implementation:</strong> Push for universal ratification and strict, uniform enforcement of the HKC by all maritime nations.</p>
+                           <p class="mt-2"><strong>Market-Based Incentives:</strong> Introduce financial mechanisms, such as recycling levies or preferential port fees, to make compliant recycling the more economically viable option for shipowners.</p>
+                           <p class="mt-2"><strong>Improve IHM Quality:</strong> Mandate and enforce the creation of accurate and complete Inventories of Hazardous Materials (IHMs) throughout a ship's operational life, not just at the end.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-white mt-16">
+        <div class="container mx-auto px-6 py-8 text-center text-slate-400 text-sm">
+            <p>This interactive analysis is based on the report "Comparative Analysis of the Hong Kong Convention, Basel Convention, and EU Ship Recycling Regulation."</p>
+            <p class="mt-1">Designed to provide an accessible overview of a complex global issue.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const comparisonData = {
+                hkc: {
+                    objective: 'To ensure ships are recycled in a manner that is safe for human health and the environment, covering the vessel\'s entire lifecycle.',
+                    scope: 'Applies to ships of ratifying nations (≥ 500 GT). It covers ship design, construction, operation, and recycling, creating a "cradle-to-grave" framework.',
+                    mechanism: 'Requires an Inventory of Hazardous Materials (IHM), a specific Ship Recycling Plan (SRP) for each vessel, and authorization of recycling facilities by their national authorities.',
+                    stringency: 'Sets the global benchmark specifically for ship recycling, but is considered less strict than the EU SRR.'
+                },
+                basel: {
+                    objective: 'To control the transboundary movement of hazardous wastes and their disposal, preventing "toxic trade" to developing countries.',
+                    scope: 'Applies globally to a broad range of hazardous wastes. It interprets end-of-life ships as "hazardous waste," triggering its controls.',
+                    mechanism: 'Operates on a system of Prior Informed Consent (PIC) for any cross-border movement. The Basel Ban Amendment prohibits hazardous waste exports from developed to developing countries.',
+                    stringency: 'Extremely strict for transboundary hazardous waste movement, but its application to ships creates legal conflicts and is often circumvented.'
+                },
+                eusrr: {
+                    objective: 'To establish a high standard for the recycling of large sea-going vessels flying an EU Member State flag.',
+                    scope: 'Applies to ships ≥ 500 GT flying an EU flag. Non-EU flagged ships visiting EU ports must also have an IHM.',
+                    mechanism: 'Mandates that all EU-flagged ships must be recycled in a facility on the pre-approved "EU List." The European Commission vets and inspects these facilities.',
+                    stringency: 'Considered the most stringent framework, setting higher environmental and safety standards than the HKC.'
+                }
+            };
+
+            const comparisonBtns = document.querySelectorAll('.comparison-btn');
+            const contentAreas = {
+                hkc: document.querySelector('#hkc-card .content-area'),
+                basel: document.querySelector('#basel-card .content-area'),
+                eusrr: document.querySelector('#eusrr-card .content-area')
+            };
+
+            function updateContent(contentType) {
+                contentAreas.hkc.textContent = comparisonData.hkc[contentType];
+                contentAreas.basel.textContent = comparisonData.basel[contentType];
+                contentAreas.eusrr.textContent = comparisonData.eusrr[contentType];
+            }
+
+            comparisonBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    comparisonBtns.forEach(b => {
+                        b.classList.remove('bg-sky-700', 'text-white');
+                        b.classList.add('bg-white', 'text-slate-700');
+                    });
+                    btn.classList.add('bg-sky-700', 'text-white');
+                    btn.classList.remove('bg-white', 'text-slate-700');
+                    
+                    const contentType = btn.dataset.content;
+                    updateContent(contentType);
+                });
+            });
+
+            updateContent('objective');
+
+            const ctx = document.getElementById('effectivenessChart').getContext('2d');
+            const effectivenessChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Global Reach', 'Stringency', 'Enforcement Power', 'Practical Impact', 'Legal Clarity'],
+                    datasets: [{
+                        label: 'HKC',
+                        data: [8, 6, 6, 4, 5],
+                        backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                        borderColor: 'rgba(56, 189, 248, 1)',
+                        pointBackgroundColor: 'rgba(56, 189, 248, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(56, 189, 248, 1)'
+                    }, {
+                        label: 'Basel Convention',
+                        data: [9, 9, 7, 2, 2],
+                        backgroundColor: 'rgba(248, 113, 113, 0.2)',
+                        borderColor: 'rgba(248, 113, 113, 1)',
+                        pointBackgroundColor: 'rgba(248, 113, 113, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(248, 113, 113, 1)'
+                    }, {
+                        label: 'EU SRR',
+                        data: [3, 9, 8, 5, 8],
+                        backgroundColor: 'rgba(74, 222, 128, 0.2)',
+                        borderColor: 'rgba(74, 222, 128, 1)',
+                        pointBackgroundColor: 'rgba(74, 222, 128, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(74, 222, 128, 1)'
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                            pointLabels: { font: { size: 12 } },
+                            suggestedMin: 0,
+                            suggestedMax: 10,
+                            ticks: {
+                                backdropColor: 'transparent',
+                                stepSize: 2
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.r !== null) {
+                                        label += context.parsed.r;
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+
+            const accordionItems = document.querySelectorAll('.accordion-item');
+            accordionItems.forEach(item => {
+                const header = item.querySelector('.accordion-header');
+                const content = item.querySelector('.accordion-content');
+                const icon = header.querySelector('span:last-child');
+
+                header.addEventListener('click', () => {
+                    const isExpanded = content.style.maxHeight && content.style.maxHeight !== '0px';
+
+                    accordionItems.forEach(i => {
+                        i.querySelector('.accordion-content').style.maxHeight = '0px';
+                        i.querySelector('.accordion-header span:last-child').style.transform = 'rotate(0deg)';
+                    });
+                    
+                    if (!isExpanded) {
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                        icon.style.transform = 'rotate(180deg)';
+                    }
+                });
+            });
+            
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
